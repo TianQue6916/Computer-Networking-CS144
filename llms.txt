@@ -1,0 +1,19 @@
+# Computer Networking (Stanford CS144)
+
+> Bilingual (EN/中文) study pack for Stanford CS144 Introduction to Computer Networking: live lecture notes, MOOC unit notes, 7 labs, practice exams with answers, video subtitles.
+
+## 讲义 Notes
+- [01-课堂讲义](01-课堂讲义): 按周次的课堂讲义、期末复习与客座讲座，均为 `*.bilingual.md`
+- [02-慕课](02-慕课): Unit1–Unit8 MOOC 单元笔记（Internet/IP、Transport、Packet Switching、Congestion Control、Routing、Lower Layers、Security）
+
+## 实验与考试 Labs & exams
+- [03-实验Lab](03-实验Lab): Lab 0–6（字节流、TCP 接收端/发送端/连接、网络接口、IP 路由器）+ 抓包练习题目与答案
+- [04-考试](04-考试): 期中、期末练习题与答案各一套
+
+## 教材与字幕
+- [05-教材](05-教材): Peterson & Davie《计算机网络：系统方法》v6.1 PDF
+- [06-视频字幕](06-视频字幕): 课程视频中文字幕 `.srt`
+
+## 备注
+- 课程材料版权归 Stanford 与原作者所有，教材版权归出版方所有。
+- 正文中文为主，英文术语行内保留原词。
