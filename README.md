@@ -17,7 +17,7 @@ Stanford CS144 *Introduction to Computer Networking* 课程资料整理。
     Unit8-Security
 03-实验Lab/       Lab 讲义与说明
 04-考试/          模拟考试与解答
-05-教材/          《Computer Networking: A Top-Down Approach》相关材料
+05-教材/          Peterson & Davie《Computer Networking: A Systems Approach》v6.1
 06-视频字幕/       课程视频中文字幕（01-主课 143 个 / 02-嘉宾讲座 8 个）
 00-课程计划.pdf
 ```
