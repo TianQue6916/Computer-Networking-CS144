@@ -30,7 +30,7 @@
 
 - 参考文献（保留原文）：[1] TIMELY: RTT-based Congestion Control for the Datacenter, SIGCOMM 2015；[2] DCTCP: Data Center TCP (DCTCP), SIGCOMM 2010；[3] BBR: Congestion-based Congestion Control, ACM Queue, 2016；[4] TCP Vegas: new techniques for congestion detection and avoidance, SIGCOMM 1994。
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> 这张分类表值得用"信号的信息量"来统一理解。丢包（loss）是最原始的信号：路由器缓冲区满了才会丢，等它发生时拥塞已经造成排队时延，甚至已经连累了别的包——而且一次丢包只携带 1 bit 信息（"发生了"），TCP New Reno/Cubic 只能据此做乘性减半。时延（delay）是先行信号：队列刚开始积压时延就上升，丢包还没发生，且用硬件时间戳测出的 RTT 有多比特分辨率——Vegas/TIMELY/BBR 都据此调速率。显式反馈（explicit feedback）则是路由器直接"开口说话"：ECN 标记、XCP/RCP 在包头写明拥塞程度，信息量最大。三者构成一个"信号越早、越丰富、但对基础设施改动越大"的光谱。你学过的 AIMD（加性增、乘性减）属于第一类：它在丢包信号下也能收敛到公平分享，但收敛慢且必然周期性丢包——数据中心受不了这种代价，这正是后面 TIMELY/DCTCP 出场的动机。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> 这张分类表值得用"信号的信息量"来统一理解。丢包（loss）是最原始的信号：路由器缓冲区满了才会丢，等它发生时拥塞已经造成排队时延，甚至已经连累了别的包——而且一次丢包只携带 1 bit 信息（"发生了"），TCP New Reno/Cubic 只能据此做乘性减半。时延（delay）是先行信号：队列刚开始积压时延就上升，丢包还没发生，且用硬件时间戳测出的 RTT（往返时间，Round-Trip Time）有多比特分辨率——Vegas/TIMELY/BBR 都据此调速率。显式反馈（explicit feedback）则是路由器直接"开口说话"：ECN 标记、XCP（显式控制协议，eXplicit Control Protocol）/RCP 在包头写明拥塞程度，信息量最大。三者构成一个"信号越早、越丰富、但对基础设施改动越大"的光谱。你学过的 AIMD（加性增、乘性减）属于第一类：它在丢包信号下也能收敛到公平分享，但收敛慢且必然周期性丢包——数据中心受不了这种代价，这正是后面 TIMELY/DCTCP 出场的动机。
 
 ### <span style="color:#2471a3;">**[section]**</span> <span style="color:#c0392b;">显式拥塞通告（Explicit Congestion Notification, ECN）</span>
 
@@ -73,7 +73,7 @@ RCP 的动机：
 
 **数据中心拥塞控制的高层目标：**
 
-- 低时延的 RPC（Low-Latency for RPCs）：为短 RPC 和长 RPC 都提供低的完成时间。
+- 低时延的 RPC（Remote Procedure Call，远程过程调用；英文标题 Low-Latency for RPCs）：为短 RPC 和长 RPC 都提供低的完成时间。
 - 端到端网络性能隔离（performance isolation）：在路径上每个拥塞点都做到隔离。
 - 带宽效率（bandwidth efficiency）：即使在高负载突发汇聚（heavy incast）下也提供高吞吐。
 - CPU 效率（CPU efficiency）：使用占用更少 CPU 的机制（例如不需要太多锁）。
@@ -85,7 +85,7 @@ RCP 的动机：
 - 是端到端拥塞信号，与拥塞控制想提供的时延保证直接挂钩。
 - 是可分解的（decomposable）——可以在不同的拥塞点上提供隔离。
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "时延是可分解的信号"这一条与排队论直接呼应。NIC 硬件时间戳让 RTT 测量精确到微秒级，而利特尔法则 $Q=\lambda d$ 告诉你：在到达率 $\lambda$ 已知时，平均排队时延 $d$ 与平均队列占用 $Q$ 一一对应——测出时延就等于测出了交换机队列的积压程度。更妙的是"可分解"：一次 RPC 的总 RTT 可以按发送网卡、本地排队、交换结构、远端处理等环节拆开（讲义后面的 SNAP 延迟来源图正是这个分解），从而把拥塞归因到具体瓶颈点并只对它做性能隔离；而丢包信号不可分解——你只知道"有包丢了"，不知道丢在哪一跳。这其实是第 3 周公式 $D=\sum l_i/c+\sum p/r_i+\sum Q_i(t)$ 的实测版：前三项固定，可变项只有排队，把总时延减去固定部分就得到排队时延的估计。TIMELY 正是据此把 RTT 与目标值比较来调节速率。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "时延是可分解的信号"这一条与排队论直接呼应。NIC 硬件时间戳让 RTT 测量精确到微秒级，而利特尔法则（Little's Law）$Q=\lambda d$ 告诉你：在到达率 $\lambda$ 已知时，平均排队时延 $d$ 与平均队列占用 $Q$ 一一对应——测出时延就等于测出了交换机队列的积压程度。更妙的是"可分解"：一次 RPC 的总 RTT 可以按发送网卡、本地排队、交换结构、远端处理等环节拆开（讲义后面的 SNAP 延迟来源图正是这个分解），从而把拥塞归因到具体瓶颈点并只对它做性能隔离；而丢包信号不可分解——你只知道"有包丢了"，不知道丢在哪一跳。这其实是第 3 周公式 $D=\sum l_i/c+\sum p/r_i+\sum Q_i(t)$ 的实测版（$l_i$ 为链路长度、$c$ 为传播速度，$l_i/c$ 是传播时延；$p$ 为分组大小、$r_i$ 为链路速率，$p/r_i$ 是发送时延；$Q_i(t)$ 为 $t$ 时刻的队列积压，即排队时延）：前两项固定，可变项只有排队，把总时延减去固定部分就得到排队时延的估计。TIMELY 正是据此把 RTT 与目标值比较来调节速率。
 
 **TIMELY 框架与算法：**
 
@@ -112,7 +112,7 @@ RCP 的动机：
 - TIMELY 在基于速率（rate-based）与基于窗口（window-based）的协议之间无缝切换。
 - **要点 2（Takeaway 2）：TIMELY 支持极小的 cwnd 以高效应对突发，同时维持高吞吐、低时延与近零丢包。**
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "cwnd < 1"表面上违反窗口的定义——一个窗口至少发一个包吧？它暴露的是窗口语义的离散化缺陷：若 1000 条流同时涌向一台主机（incast），链路容量摊到每条流只有千分之一，理想窗口是 0.001 个包，但传统 TCP 最多只能"每 RTT 发 1 个包"，1000 条流合起来仍是 1000 个包的突发，队列瞬间爆掉。TIMELY 的解法是 pacing（步调发送）：用时间轮把"每 RTT 0.001 个包"实现为"每 1000 个 RTT 发 1 个包"，相当于把速率定义从离散窗口推广到连续时间。这与第 3 周 WFQ 的虚拟时间思想同源：都是把"份额"从整包粒度细化到比特粒度。"在基于速率与基于窗口之间无缝切换"点破了二者的数学本质——窗口 $W$ 与速率 $W/\text{RTT}$ 本来就是同一约束的两种写法，难点只在工程实现。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "cwnd < 1"表面上违反窗口的定义——一个窗口至少发一个包吧？它暴露的是窗口语义的离散化缺陷：若 1000 条流同时涌向一台主机（incast），链路容量摊到每条流只有千分之一，理想窗口是 0.001 个包，但传统 TCP 最多只能"每 RTT 发 1 个包"，1000 条流合起来仍是 1000 个包的突发，队列瞬间爆掉。TIMELY 的解法是 pacing（步调发送）：用时间轮把"每 RTT 0.001 个包"实现为"每 1000 个 RTT 发 1 个包"，相当于把速率定义从离散窗口推广到连续时间。这与第 3 周 WFQ（Weighted Fair Queuing，加权公平队列，一种按流权重公平分配带宽、以虚拟完成时间决定发送顺序的调度算法）的虚拟时间思想同源：都是把"份额"从整包粒度细化到比特粒度。"在基于速率与基于窗口之间无缝切换"点破了二者的数学本质——窗口 $W$ 与速率 $W/\text{RTT}$ 本来就是同一约束的两种写法，难点只在工程实现。
 
 **大规模汇聚（Large Incast：1000 条流同时发往 1 台）：**
 
@@ -129,7 +129,7 @@ RCP 的动机：
 - 如果 TIMELY 与 TCP 共享队列，时延、丢包、吞吐都会被 TCP 影响——因为 TCP 通常需要更多缓冲区。
 - **要点 3（Takeaway 3）：TIMELY 跑在自己专用的网络队列上，这使它得以兑现低时延与近零丢包的承诺。**
 
-- 图示：在相近吞吐下，TIMELY 的丢弃数显著更低（TCP discards vs TIMELY discards、TCP bps vs TIMELY bps；并对比 Swift）——某速率下 TIMELY 几乎零丢包。
+- 图示：在相近吞吐下，TIMELY 的丢弃数显著更低（TCP discards vs TIMELY discards、TCP bps vs TIMELY bps；并对比 Google 数据中心传输协议 Swift）——某速率下 TIMELY 几乎零丢包。
 
 **受 CPU 约束的网络（CPU constrained Networks）：**
 
@@ -138,7 +138,7 @@ RCP 的动机：
 - <span style="color:#00838f;">端点拥塞的行为与交换结构拥塞不同：它更易变、更瞬态——不仅取决于每秒到达的包数，还取决于主机自身属性（如缓存局部性 cache locality）。</span>
 - **要点 4（Takeaway 4）：用两个拥塞窗口而不是一个。** 一个跟踪交换结构（fabric）中的可用容量，另一个跟踪端点的可用容量：$cwnd = \min(f_{cwnd},\ e_{cwnd})$。
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "两个拥塞窗口"是这场讲座最有洞察的设计：拥塞不只发生在网络交换结构，也发生在端点的软件栈——网卡 DMA、内核协议栈、CPU 缓存都可能成为瓶颈，而且端点拥塞更易变（还与缓存局部性等主机属性有关）。用 $cwnd=\min(f_{cwnd}, e_{cwnd})$ 取两者较小值，等于分别跟踪两种瓶颈资源——这与 CSAPP 的性能分析思想一致：系统性能取决于最慢的组件，必须分别建模 CPU 瓶颈与 I/O 瓶颈，不能混为一谈。后面 SNAP 用微内核方式做主机网络栈、Carousel 每核一个 shaper，都是在把"端点拥塞"这个新维度工程化。给读者的启示：拥塞控制本质上是一般化的资源分配问题，"哪里会堵"比"怎么退避"更重要——发现新的瓶颈类型往往比优化老算法收益更大。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> "两个拥塞窗口"是这场讲座最有洞察的设计：拥塞不只发生在网络交换结构，也发生在端点的软件栈——网卡 DMA（直接内存访问，Direct Memory Access）、内核协议栈、CPU 缓存都可能成为瓶颈，而且端点拥塞更易变（还与缓存局部性等主机属性有关）。用 $cwnd=\min(f_{cwnd}, e_{cwnd})$ 取两者较小值，等于分别跟踪两种瓶颈资源——这与 CSAPP（《深入理解计算机系统》，Computer Systems: A Programmer's Perspective）的性能分析思想一致：系统性能取决于最慢的组件，必须分别建模 CPU 瓶颈与 I/O 瓶颈，不能混为一谈。后面 SNAP 用微内核（microkernel）方式做主机网络栈、Carousel 每核一个 shaper（整形器），都是在把"端点拥塞"这个新维度工程化。给读者的启示：拥塞控制本质上是一般化的资源分配问题，"哪里会堵"比"怎么退避"更重要——发现新的瓶颈类型往往比优化老算法收益更大。
 
 **SNAP 中的时延来源（Delay sources in SNAP）：**
 
@@ -150,12 +150,12 @@ RCP 的动机：
   5. 远端网卡发送时延（Remote NIC Tx Delay）；
   6. 反向交换结构时延（Reverse Fabric Delay，含交换机队列）；
   7. 本地网卡接收时延（Local NIC Rx Delay）。
-- 背景注：SNAP 是支持 RDMA 的高性能主机网络栈（微内核方式）：*Snap: a Microkernel Approach to Host Networking*。
+- 背景注：SNAP 是支持 RDMA（远程直接内存访问，Remote Direct Memory Access）的高性能主机网络栈（微内核方式）：*Snap: a Microkernel Approach to Host Networking*。
 
 **实践中的流量整形器（Traffic Shapers in Practice）：**
 
 - 分组来源：主机 OS 或虚拟机（Guest VM）的套接字缓冲区（socket buffers）。
-- 图示：分组经分类器（classifier）与调度器（scheduler），用多个令牌桶队列做预过滤（pre-filtering with multiple token bucket queues），以 Rate1/Rate2/Rate3 三种速率整形后送往 NIC。
+- 图示：分组经分类器（classifier）与调度器（scheduler），用多个令牌桶队列做预过滤（pre-filtering with multiple token bucket queues；令牌桶按固定速率补充令牌、发送分组需消耗令牌），以 Rate1/Rate2/Rate3 三种速率整形后送往 NIC。
 
 **Carousel 的设计原则（Design Principles of Carousel）：**
 

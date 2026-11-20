@@ -12,7 +12,7 @@
 
 1. **TCP——传输控制协议（Transmission Control Protocol）**：超过 95% 的互联网应用在使用。TCP 几乎被普遍采用，因为它提供了几乎所有应用都需要的**可靠的、端到端的、双向的字节流服务（reliable, end-to-end, bidirectional byte-stream service）**。本单元的大部分视频都围绕 TCP 展开：你学习了如何检测分组在途中未被送达或被损坏，学习了 TCP 为成功重传（retransmission）数据直到正确交付而使用的各种机制。我们用了 3 段视频探讨在不可靠的互联网上可靠交付数据的不同方法。
 
-2. **UDP——用户数据报协议（User Datagram Protocol）**：供不需要 TCP 那种"保证交付"服务的应用使用——要么应用以自己的私有方式处理重传，要么它根本不需要可靠交付。UDP 所做的全部事情是：取来应用数据，创建一个 UDP 数据报（datagram），数据报中标识出数据在另一端应送达的应用。仅此而已。虽然用 UDP 的应用很少，但我们见过 DNS 与 DHCP 这两个例子，它们都是简单的请求—响应式查询协议。
+2. **UDP——用户数据报协议（User Datagram Protocol）**：供不需要 TCP 那种"保证交付"服务的应用使用——要么应用以自己的私有方式处理重传，要么它根本不需要可靠交付。UDP 所做的全部事情是：取来应用数据，创建一个 UDP 数据报（datagram），数据报中标识出数据在另一端应送达的应用。仅此而已。虽然用 UDP 的应用很少，但我们见过 DNS（Domain Name System，域名系统）与 DHCP（Dynamic Host Configuration Protocol，动态主机配置协议）这两个例子，它们都是简单的请求—响应式查询协议。
 
 3. **ICMP——互联网控制消息协议（Internet Control Message Protocol）**：它的主要职责是在出现问题时发送反馈。例如，路由器收到一个 IP 数据报却不知道下一步该发往何处，就向源头发送一条 ICMP 消息告知情况。ICMP 对诊断端到端通信为何不正常非常有用。
 
@@ -23,7 +23,7 @@
 
 <span style="color:#7f8c8d;">（第 1 页 / 共 3 页）</span>
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> Nick 概括的端到端原则有两个强弱版本，这个区分比口号本身重要得多。弱版本是 1984 年 Saltzer、Reed 与 Clark 的论文《End-to-End Arguments in System Design》的原意：某些功能只有在端系统上实现才能完全正确，网络内部可以加辅助功能但只能"帮忙"不能"替代"——因为中间节点看不见全部故障模式（主机内存里的位翻转、路由器缓存中的损坏，网络无从知晓）。强版本更进一步：能在主机上做就应在主机上做，把网络保持简单。你已经知道 TCP 就是弱版本的落点：IP 层尽力而为（best-effort），可靠字节流（reliable byte stream）由两端主机的 TCP 实现补齐；这还带来命运共享（fate sharing）的好处——连接断了，两端状态一起消失，不会在网络里留下半死的中间状态。CSAPP 第 11 章里你写的服务器只调 socket API，看不到这层论证；但"为什么不在路由器上为可靠传输打补丁"这个问题，答案就藏在这一段里。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> Nick 概括的端到端原则有两个强弱版本，这个区分比口号本身重要得多。弱版本是 1984 年 Saltzer、Reed 与 Clark 的论文《End-to-End Arguments in System Design》的原意：某些功能只有在端系统上实现才能完全正确，网络内部可以加辅助功能但只能"帮忙"不能"替代"——因为中间节点看不见全部故障模式（主机内存里的位翻转、路由器缓存中的损坏，网络无从知晓）。强版本更进一步：能在主机上做就应在主机上做，把网络保持简单。你已经知道 TCP 就是弱版本的落点：IP 层尽力而为（best-effort），可靠字节流（reliable byte stream）由两端主机的 TCP 实现补齐；这还带来命运共享（fate sharing）的好处——连接断了，两端状态一起消失，不会在网络里留下半死的中间状态。CSAPP（Computer Systems: A Programmer's Perspective，《深入理解计算机系统》）第 11 章里你写的服务器只调 socket（套接字）API，看不到这层论证；但"为什么不在路由器上为可靠传输打补丁"这个问题，答案就藏在这一段里。
 
 ### <span style="color:#2471a3;">**[section]**</span> <span style="color:#c0392b;">第 2 页 · Phil Levis：五大主题</span>
 
@@ -37,7 +37,7 @@
 
 <span style="color:#7f8c8d;">（第 2 页 / 共 3 页）</span>
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> Phil 对 TCP 的那句概括值得细读："基础 TCP 机制使用 Go-Back-N，并用滑动窗口跟踪未确认字节"——它把 2-9 重传策略与 2-8 滑动窗口两份讲义焊在了一句话里：滑动窗口提供吞吐量（多条报文在途、管道充满），Go-Back-N 提供丢包后的恢复策略（接收窗口为 1、整窗回退），两者的组合是 1980 年代主机内存昂贵约束下的最优工程解。用期望的语言复核其代价：丢包率 $p$ 下，一次丢包使窗口内 $N$ 个在途分组全部作废，平均要重传 $O(N)$ 个分组，有效吞吐量随 $p$ 增大而坍缩——这正是后来高带宽时延积网络需要快速重传与 SACK 这类选择性重传补丁的原因。对照 CSAPP 第 11 章：你在 socket 层看到的 `connect()`/`accept()` 只是状态机的入口，真正让一条 TCP 连接"可靠"的全部机器——序号、确认、重传、窗口——都发生在内核协议栈里，而状态机就是它们的调度中枢。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> Phil 对 TCP 的那句概括值得细读："基础 TCP 机制使用 Go-Back-N，并用滑动窗口跟踪未确认字节"——它把 2-9 重传策略与 2-8 滑动窗口两份讲义焊在了一句话里：滑动窗口提供吞吐量（多条报文在途、管道充满），Go-Back-N 提供丢包后的恢复策略（接收窗口为 1、整窗回退），两者的组合是 1980 年代主机内存昂贵约束下的最优工程解。用期望的语言复核其代价：丢包率 $p$ 下，一次丢包使窗口内 $N$ 个在途分组全部作废，平均要重传 $O(N)$ 个分组，有效吞吐量随 $p$ 增大而坍缩——这正是后来高带宽时延积（bandwidth-delay product）网络需要快速重传（fast retransmit）与 SACK（Selective Acknowledgment，选择性确认）这类选择性重传补丁的原因。对照 CSAPP 第 11 章：你在 socket 层看到的 `connect()`/`accept()` 只是状态机的入口，真正让一条 TCP 连接"可靠"的全部机器——序号、确认、重传、窗口——都发生在内核协议栈里，而状态机就是它们的调度中枢。
 
 ### <span style="color:#2471a3;">**[section]**</span> <span style="color:#c0392b;">第 3 页 · 学习目标自查</span>
 
@@ -50,7 +50,7 @@
 
 <span style="color:#7f8c8d;">（第 3 页 / 共 3 页）</span>
 
-> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> 这份自查清单正好是本单元五份 slides 的目录，建议把它当作复述练习：合上讲义，逐条独立讲出"机制是什么"与"为什么这样设计"两个层次——比如停等（stop-and-wait）与滑动窗口的效率差距要用带宽时延积解释，序列号空间要给出 $RWS + SWS$ 的推导，TIME-WAIT 的 $2\,\mathrm{MSL}$ 要能还原"最后 ACK 丢失 + 端口复用"两个场景。Nick 提到的"95% 应用用 TCP"也值得追问反面：UDP 上的 DNS/DHCP 是一问一答的短查询，为它付三次握手加慢启动的代价不划算，超时后直接重发整个查询更简单——CSAPP 里 `SOCK_STREAM` 与 `SOCK_DGRAM` 的参数区别就是这个选择的编程接口体现。三种传输层的分工本质上是"谁为可靠性买单"的三种答案：TCP 由内核买单、UDP 由应用自付、ICMP 只报告故障。
+> <span style="color:#1e8449;">**[note] Note（译者注）:**</span> 这份自查清单正好是本单元五份 slides 的目录，建议把它当作复述练习：合上讲义，逐条独立讲出"机制是什么"与"为什么这样设计"两个层次——比如停等（stop-and-wait）与滑动窗口的效率差距要用带宽时延积解释，序列号空间要给出 $RWS + SWS$（接收窗口大小与发送窗口大小，即 receiver window size 与 sender window size）的推导，TIME-WAIT（时间等待）的 $2\,\mathrm{MSL}$（最长报文段生存时间，即 maximum segment lifetime）要能还原"最后 ACK（确认）丢失 + 端口复用"两个场景。Nick 提到的"95% 应用用 TCP"也值得追问反面：UDP 上的 DNS/DHCP 是一问一答的短查询，为它付三次握手（three-way handshake）加慢启动（slow start）的代价不划算，超时后直接重发整个查询更简单——CSAPP 里 `SOCK_STREAM`（流式套接字）与 `SOCK_DGRAM`（数据报式套接字）的参数区别就是这个选择的编程接口体现。三种传输层的分工本质上是"谁为可靠性买单"的三种答案：TCP 由内核买单、UDP 由应用自付、ICMP 只报告故障。
 
 ---
 
