@@ -1,0 +1,16 @@
+# 行尾统一：仓库里所有文本按 LF 存，工作树也按 LF 检出（跨 Windows/Linux 一致）
+* text=auto eol=lf
+*.md text eol=lf
+*.srt text eol=lf
+*.txt text eol=lf
+*.json text eol=lf
+*.yml text eol=lf
+# 二进制：不做 eol 转换、不进 diff（PDF 是渲染/原书产物，Python 无法增量比较）
+*.pdf binary -diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.epub binary -diff
+*.docx binary -diff
+*.zip binary -diff
